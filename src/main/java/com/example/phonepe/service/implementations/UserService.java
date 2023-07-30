@@ -42,7 +42,9 @@ public class UserService implements UserInterface {
 
         Event event = eventService.createEvent(organizer, eventName, slot, users);
 
-        organizerEvents.getOrDefault(organizer.getUserId(), new ArrayList<>()).add(event);
+        List<Event> organizerEventList = organizerEvents.getOrDefault(organizer.getUserId(), new ArrayList<>());
+        organizerEventList.add(event);
+        organizerEvents.put(organizer.getUserId(), organizerEventList);
         organizer.getEvents().add(event);
         users.forEach(user -> {
             List<Event> events = user.getEvents();
@@ -89,25 +91,28 @@ public class UserService implements UserInterface {
     public Slot getUpcomingEmptySlot(List<User> users, Integer durationInMins) {
 
         for(User user: users) {
-            List<Slot> slots = user.getShifts();
-            if (slots == null)
+            List<Slot> shifts = user.getShifts();
+            if (shifts == null)
                 continue;
-            for (Slot slot : slots) {
-                if (slot.getEndTime().isBefore(slot.getStartTime().plusMinutes(durationInMins)))
+            for (Slot shift : shifts) {
+                if (shift.getEndTime().isBefore(shift.getStartTime().plusMinutes(durationInMins)))
                     continue;
                 AtomicBoolean isSlotFree = new AtomicBoolean(true);
                 for (User user1 : users) {
                     if (user1.getEvents() == null)
                         continue;
                     List<Event> events =
-                            user1.getEvents().stream().filter(event -> event.getSlot().getStartTime().isBefore(slot.getEndTime()) && event.getSlot().getEndTime().isAfter(slot.getStartTime())).collect(Collectors.toList());
+                            user1.getEvents().stream()
+                                    .filter(event -> event.getSlot().getStartTime().isBefore(shift.getEndTime()) && event.getSlot().getEndTime()
+                                            .isAfter(shift.getStartTime())).collect(Collectors.toList());
+                    
                     if (events.size() > 0) {
                         isSlotFree.set(false);
                         break;
                     }
                 }
                 if (isSlotFree.get())
-                    return slot;
+                    return shift;
             }
         }
 
@@ -127,8 +132,14 @@ public class UserService implements UserInterface {
 
 //        check if events are overlapping
         for (Event event : events) {
-            if(event.getSlot().getEndTime().isBefore(event.getSlot().getStartTime()))
-                overlappingEvents.add(event);
+           for (Event event1 : events) {
+               if (event != event1) {
+                   if (event.getSlot().getStartTime().isBefore(event1.getSlot().getEndTime()) && event.getSlot().getEndTime().isAfter(event1.getSlot().getStartTime())) {
+                       overlappingEvents.add(event);
+                       break;
+                   }
+               }
+           }
         }
 
         return overlappingEvents;

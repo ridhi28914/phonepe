@@ -56,7 +56,7 @@ class PhonepeApplicationTests {
 			System.out.println(event.getEventName());
 		});
 
-		userService.deleteEvent(user1.getUserId(), event1.getEventId());
+//		userService.deleteEvent(user1.getUserId(), event1.getEventId());
 
 		userService.getEvents(user1.getUserId()).forEach(event -> {
 			System.out.println(event.getEventName());
@@ -65,6 +65,7 @@ class PhonepeApplicationTests {
 //		create conflicting event
 
 		List<User> userList2 = new ArrayList<>();
+		userList2.add(user1);
 		userList2.add(user2);
 		userList2.add(user3);
 
@@ -74,6 +75,8 @@ class PhonepeApplicationTests {
 				userList);
 
 		List<Event> events = userService.fetchConflictingEvents(user1.getUserId());
+
+		userService.getUpcomingEmptySlot(userList2, 30);
 
 
 	}
