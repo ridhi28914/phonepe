@@ -40,9 +40,8 @@ public class EventService implements EventInterface {
 
         event.getUsers().forEach(user -> {
             List<Event> events = user.getEvents();
-            if (events == null)
-                events = new ArrayList<>();
-            events.remove(event);
+            if (events != null)
+                events.remove(event);
         });
     }
 

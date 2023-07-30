@@ -44,8 +44,11 @@ public class UserService implements UserInterface {
 
         List<Event> organizerEventList = organizerEvents.getOrDefault(organizer.getUserId(), new ArrayList<>());
         organizerEventList.add(event);
+
         organizerEvents.put(organizer.getUserId(), organizerEventList);
+
         organizer.getEvents().add(event);
+
         users.forEach(user -> {
             List<Event> events = user.getEvents();
             if (events == null)
@@ -81,7 +84,6 @@ public class UserService implements UserInterface {
         eventService.deleteEvent(event);
     }
 
-
     @Override
     public List<Event> getEvents(String userId) {
         return userIdToUserMap.get(userId).getEvents();
@@ -105,7 +107,7 @@ public class UserService implements UserInterface {
                             user1.getEvents().stream()
                                     .filter(event -> event.getSlot().getStartTime().isBefore(shift.getEndTime()) && event.getSlot().getEndTime()
                                             .isAfter(shift.getStartTime())).collect(Collectors.toList());
-                    
+
                     if (events.size() > 0) {
                         isSlotFree.set(false);
                         break;
@@ -126,7 +128,7 @@ public class UserService implements UserInterface {
         List<Event> events = user.getEvents();
 
 //       sort all events
-        events.sort((event1, event2) -> event1.getSlot().getStartTime().compareTo(event2.getSlot().getStartTime()));
+//        events.sort((event1, event2) -> event1.getSlot().getStartTime().compareTo(event2.getSlot().getStartTime()));
 
         List<Event> overlappingEvents = new ArrayList<>();
 
