@@ -18,7 +18,7 @@ public interface UserInterface {
 
     List<Event> getEvents(String userId);
 
-    Slot getUpcomingEmptySlot(List<User> users, Integer durationInMins);
+    Slot getCommonFreeSlot(List<User> users, Integer durationInMins);
 
     List<Event> fetchConflictingEvents(String userId);
 

@@ -6,10 +6,8 @@ import com.example.phonepe.models.User;
 import com.example.phonepe.service.interfaces.UserInterface;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -90,38 +88,6 @@ public class UserService implements UserInterface {
     }
 
     @Override
-    public Slot getUpcomingEmptySlot(List<User> users, Integer durationInMins) {
-
-        for(User user: users) {
-            List<Slot> shifts = user.getShifts();
-            if (shifts == null)
-                continue;
-            for (Slot shift : shifts) {
-                if (shift.getEndTime().isBefore(shift.getStartTime().plusMinutes(durationInMins)))
-                    continue;
-                AtomicBoolean isSlotFree = new AtomicBoolean(true);
-                for (User user1 : users) {
-                    if (user1.getEvents() == null)
-                        continue;
-                    List<Event> events =
-                            user1.getEvents().stream()
-                                    .filter(event -> event.getSlot().getStartTime().isBefore(shift.getEndTime()) && event.getSlot().getEndTime()
-                                            .isAfter(shift.getStartTime())).collect(Collectors.toList());
-
-                    if (events.size() > 0) {
-                        isSlotFree.set(false);
-                        break;
-                    }
-                }
-                if (isSlotFree.get())
-                    return shift;
-            }
-        }
-
-        throw new RuntimeException("No slot found");
-    }
-
-    @Override
     public List<Event> fetchConflictingEvents(String userId) {
 
         User user = userIdToUserMap.get(userId);
@@ -145,6 +111,91 @@ public class UserService implements UserInterface {
         }
 
         return overlappingEvents;
+    }
+
+    @Override
+    public Slot getCommonFreeSlot(List<User> users, Integer durationInMins) {
+
+        List<List<Slot>> userFreeSlot = new ArrayList<>();
+        for (User user : users) {
+            List<Slot> shifts = user.getShifts();
+            List<Slot> occupiedSlots = user.getEvents().stream().map(event -> event.getSlot()).collect(Collectors.toList());
+            shifts.sort(Comparator.comparing(Slot::getStartTime));
+            occupiedSlots.sort(Comparator.comparing(Slot::getStartTime));
+
+            List<Slot> freeSlots = new ArrayList<>();
+
+            for (int i = 0; i < shifts.size(); i++) {
+                Slot currentShift = shifts.get(i);
+                LocalDateTime lastFreeTime = currentShift.getStartTime();
+                for (int j = 0; j < occupiedSlots.size(); j++) {
+                    if (occupiedSlots.get(j).getStartTime().isAfter(lastFreeTime)) {
+                        Slot freeSlot = new Slot(lastFreeTime, occupiedSlots.get(j).getStartTime());
+                        freeSlots.add(freeSlot);
+                    }
+                    lastFreeTime = occupiedSlots.get(j).getEndTime();
+                }
+
+
+                if (lastFreeTime.isBefore(currentShift.getEndTime())) {
+                    Slot freeSlot = new Slot(lastFreeTime, currentShift.getEndTime());
+                    freeSlots.add(freeSlot);
+                }
+            }
+
+            userFreeSlot.add(freeSlots);
+        }
+
+        List<Slot> commonFreeSlots = userFreeSlot.get(0);
+
+        for (int i = 1; i < userFreeSlot.size(); i++) {
+
+            commonFreeSlots = findCommonSlotsBetweenTwoUsers(commonFreeSlots, userFreeSlot.get(i), durationInMins);
+        }
+
+        if (commonFreeSlots.isEmpty())
+            throw new RuntimeException("Free slot not found");
+
+        return commonFreeSlots.get(0);
+    }
+
+
+
+        private List<Slot> findCommonSlotsBetweenTwoUsers(List<Slot> slot1, List<Slot> slot2, int durationInMins) {
+
+        int i=0;
+        int j=0;
+        List<Slot> commonSlots = new ArrayList<>();
+
+        while(i< slot1.size() && j<slot2.size()) {
+
+            Slot firstSlot= slot1.get(i);
+            Slot secondSlot = slot2.get(j);
+
+            LocalDateTime startTime = firstSlot.getStartTime().isAfter(secondSlot.getStartTime()) ? firstSlot.getStartTime() : secondSlot.getStartTime();
+            LocalDateTime endTime = firstSlot.getEndTime().isBefore(secondSlot.getEndTime()) ? firstSlot.getEndTime() : secondSlot.getEndTime();
+
+
+
+            if(startTime.isBefore(endTime) && startTime.plusMinutes(durationInMins).isBefore(endTime)){
+                LocalDateTime slotStartTime = startTime;
+                LocalDateTime slotEndTime = startTime.plusMinutes(durationInMins);
+                while (slotEndTime.isBefore(endTime)) {
+
+                    slotEndTime = slotEndTime.plusMinutes(durationInMins);
+                }
+
+                commonSlots.add(new Slot(slotStartTime, slotEndTime));
+            }
+
+            if (firstSlot.getEndTime().isBefore(secondSlot.getEndTime())) {
+                i++;
+            } else {
+                j++;
+            }
+
+        }
+        return commonSlots;
     }
 
 }

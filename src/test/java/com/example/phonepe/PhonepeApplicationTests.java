@@ -76,8 +76,7 @@ class PhonepeApplicationTests {
 
 		List<Event> events = userService.fetchConflictingEvents(user1.getUserId());
 
-		userService.getUpcomingEmptySlot(userList2, 30);
-
+		Slot commonFreeSlot = userService.getCommonFreeSlot(userList2, 30);
 
 	}
 
