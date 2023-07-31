@@ -13,7 +13,6 @@ public class EventService implements EventInterface {
 
     Map<String, Event> events = new HashMap<>();
 
-
     @Override
     public Event getEvent(String eventId) {
         Event event = events.get(eventId);

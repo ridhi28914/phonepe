@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Service
@@ -88,26 +87,22 @@ public class UserService implements UserInterface {
     }
 
     @Override
-    public List<Event> fetchConflictingEvents(String userId) {
+    public Set<Event> fetchConflictingEvents(String userId) {
 
         User user = userIdToUserMap.get(userId);
         List<Event> events = user.getEvents();
 
 //       sort all events
-//        events.sort((event1, event2) -> event1.getSlot().getStartTime().compareTo(event2.getSlot().getStartTime()));
+        events.sort(Comparator.comparing(event -> event.getSlot().getStartTime()));
 
-        List<Event> overlappingEvents = new ArrayList<>();
+        Set<Event> overlappingEvents = new HashSet<>();
 
 //        check if events are overlapping
-        for (Event event : events) {
-           for (Event event1 : events) {
-               if (event != event1) {
-                   if (event.getSlot().getStartTime().isBefore(event1.getSlot().getEndTime()) && event.getSlot().getEndTime().isAfter(event1.getSlot().getStartTime())) {
-                       overlappingEvents.add(event);
-                       break;
-                   }
-               }
-           }
+        for (int i = 1; i < events.size(); i++) {
+            if (events.get(i - 1).getSlot().getEndTime().isAfter(events.get(i).getSlot().getStartTime())) {
+                overlappingEvents.add(events.get(i - 1));
+                overlappingEvents.add(events.get(i));
+            }
         }
 
         return overlappingEvents;

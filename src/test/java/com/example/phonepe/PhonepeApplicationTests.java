@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @SpringBootTest
 class PhonepeApplicationTests {
@@ -74,7 +75,12 @@ class PhonepeApplicationTests {
 						LocalDateTime.of(2023, 7, 30, 10, 00, 59)),
 				userList);
 
-		List<Event> events = userService.fetchConflictingEvents(user1.getUserId());
+		Event event3 = userService.createEvent(user1, "event3", new Slot(
+						LocalDateTime.of(2023, 7, 30, 9, 15, 0),
+						LocalDateTime.of(2023, 7, 30, 10, 00, 59)),
+				userList);
+
+		Set<Event> events = userService.fetchConflictingEvents(user1.getUserId());
 
 		Slot commonFreeSlot = userService.getCommonFreeSlot(userList2, 30);
 

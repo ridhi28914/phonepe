@@ -5,6 +5,7 @@ import com.example.phonepe.models.Slot;
 import com.example.phonepe.models.User;
 
 import java.util.List;
+import java.util.Set;
 
 public interface UserInterface {
 
@@ -20,6 +21,6 @@ public interface UserInterface {
 
     Slot getCommonFreeSlot(List<User> users, Integer durationInMins);
 
-    List<Event> fetchConflictingEvents(String userId);
+    Set<Event> fetchConflictingEvents(String userId);
 
 }
